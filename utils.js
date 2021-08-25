@@ -1,38 +1,42 @@
-const nightmare = require("nightmare");
-const cheerio = require("cheerio");
-const { prop } = require("cheerio/lib/api/attributes");
-const night = new nightmare({
-  show: true,
-  gotoTimeout: 8000,
-});
+class HashTable {
+  constructor() {
+    this.table = new Array();
+    this.size = 0;
+  }
 
-const contentPromise = (urls) => {
-  let prom = [];
-  return new Promise(async function (resolve, reject) {
-    let da;
+  _setDefaultArray(arra) {
+    this.table = arra;
+  }
+  _hash(key) {
+    let hash = 0;
+    for (let i = 0; i < key.length; i++) {
+      hash += key.charCodeAt(i);
+    }
+    return hash % this.table.length;
+  }
 
-    urls.forEach(function (url) {
-      prom.push(
-        night
-          .goto(url)
-          .wait("body")
-          .evaluate(() => document.body.innerHTML)
-          .then(async (e) => {
-            let $ = cheerio.load(e);
+  set(key, value) {
+    const index = this._hash(key);
+    this.table[index] = [key, value];
+    this.size++;
+  }
 
-            da = $(
-              "#__next > div > main > section.article.news.global-content > div > div.article-module.article > article.news.default-article.article > div.article-body-wrapper > section,.article-content > div,.article-body"
-            ).text();
-            return da;
-          })
-          .catch((e) => console.log(e))
-      );
-    });
+  get(key) {
+    const target = this._hash(key);
+    return this.table[target];
+  }
 
-    Promise.allSettled(prom).then((res) => console.log(res, "ressss"));
-    // console.log(da, "daaaaa");
-    reject("Error");
-  });
-};
+  remove(key) {
+    const index = this._hash(key);
 
-module.exports = contentPromise;
+    if (this.table[index] && this.table[index].length) {
+      this.table[index] = [];
+      this.size--;
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+module.exports = HashTable;

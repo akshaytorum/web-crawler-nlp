@@ -4,6 +4,8 @@ const request = require("request");
 const cheerio = require("cheerio");
 const Nightmare = require("nightmare");
 var natural = require("natural");
+const Hash = require("./utils");
+const HashTable = require("./utils");
 
 let night = new Nightmare({
   show: true,
@@ -395,49 +397,47 @@ app.use("/nightmare-cointelegraph", async (req, res, next) => {
         let da;
         const prom = [];
         $(
-          "#__next > div > main > section > div.story-stack-chinese-wrapper > div.container > div.page-area-dotted > section.page-area-dotted-content > div.story-stack > section.list-body"
-        ).each(function () {
-          $(this)
-            .find("div.list-item-card.post ")
-            .map(async function () {
-              // let tag = $(this)
-              //   .find("div.text-content > a.button.eyebrow-button")
-              //   .text();
-              // let title = $(this)
-              //   .find("div.text-content > a > h4.heading")
-              //   .text();
-              // let publishedDate = $(this)
-              //   .find("div.text-content > div.card-desc-block > time.time")
-              //   .text();
-              // let asset = $(this)
-              //   .find(
-              //     "div.media-content > div.media-wrapper > a > picture > source"
-              //   )
-              //   .attr("srcset");
-              let link = $(this)
-                .find("div.media-content > div.media-wrapper > a")
-                .attr("href");
-
-              prom.push(
-                night
-                  .click("div.media-content > div.media-wrapper > a")
-                  .wait(2000)
-                  .evaluate(() => document.body.innerHTML)
-                  .then(async (e) => {
-                    let $ = cheerio.load(e);
-                    da = await $(
-                      "#__next > div > main > section.article.news.global-content > div > div.article-module.article > article.news.default-article.article > div.article-body-wrapper > section,.article-content > div,.article-body"
-                    ).text();
-                    console.log(da, `daaaa ${link}`);
-                    return da;
-                  })
-                  .catch((e) => console.log(e))
-              );
-            });
-          Promise.allSettled(prom)
-            .then((res) => console.log(res))
-            .catch((e) => console.log(e, "errrr"));
+          "#__next > div > main > section > div.story-stack-chinese-wrapper > div.container > div.page-area-dotted > section.page-area-dotted-content > div.story-stack > section.list-bodyx"
+        ).map(function () {
+          // $(this)
+          //   .find()
+          //   .each(async function () {
+          // let tag = $(this)
+          //   .find("div.text-content > a.button.eyebrow-button")
+          //   .text();
+          // let title = $(this)
+          //   .find("div.text-content > a > h4.heading")
+          //   .text();
+          // let publishedDate = $(this)
+          //   .find("div.text-content > div.card-desc-block > time.time")
+          //   .text();
+          // let asset = $(this)
+          //   .find(
+          //     "div.media-content > div.media-wrapper > a > picture > source"
+          //   )
+          //   .attr("srcset");
+          let link = $(this)
+            .find("div.media-content > div.media-wrapper > a")
+            .attr("href");
+          night
+            .goto(`https://www.coindesk.com${link}`)
+            .wait("body")
+            .evaluate(() => document.body.innerHTML)
+            .then(async (e) => {
+              // console.log(e, "html body");
+              let $ = cheerio.load(e);
+              da = await $(
+                "#__next > div > main > section.article.news.global-content > div > div.article-module.article > article.news.default-article.article > div.article-body-wrapper > section,.article-content > div,.article-body"
+              ).text();
+              console.log(da, `daaaa ${link}`);
+              return da;
+            })
+            .catch((e) => console.log(e));
         });
+        //   Promise.allSettled(prom)
+        //     .then((res) => console.log(res))
+        //     .catch((e) => console.log(e, "errrr"));
+        // });
         // res.json({
         //   data,
         // });
@@ -1100,7 +1100,7 @@ app.use("/coindesk-bitcoin-home", (req, res, next) => {
       console.log(href1, "hrefffff");
       $(
         "#__next div > section.featured-hub-content.v5up > section.right-column > section.article-card-fh"
-      ).each(function () {
+      ).each(async function () {
         let link = $(this).find("div.card-img-block a").attr("href");
         let link2 = $(this)
           .find("div.card-img-block a.button.eyebrow-button")
@@ -1114,6 +1114,15 @@ app.use("/coindesk-bitcoin-home", (req, res, next) => {
             "div.text-group > div.card-text-block > div.card-desc > span.card-date"
           )
           .text();
+
+        await night
+          .goto(`https://www.coindesk.com${link}`)
+          .wait(2000)
+          .evaluate(() => document.body.innerHTML)
+          .then((e) => {
+            let $ = cheerio.load(e);
+            console.log($, "$$$$$$$");
+          });
         data2.push({
           link: `https://www.coindesk.com${link}`,
           img,
@@ -1493,6 +1502,119 @@ app.use("/uzmancoin-news", async (req, res, next) => {
   //   data,
   //   message: "Successfully crawled",
   // });
+});
+
+app.use("/night-telegraph", async (req, res) => {
+  try {
+    const prom = [];
+    const asds = await night
+      .goto(`https://cointelegraph.com/tags/${req.body.type}`)
+      .click("button.btn.posts-listing__more-btn")
+      .wait(2000)
+      .click("button.btn.posts-listing__more-btn")
+      .evaluate(() => document.body.innerHTML)
+      .then(async (e) => {
+        try {
+          let $ = cheerio.load(e);
+          let data = [];
+          $(
+            "#__nuxt  > #__layout > .layout > .layout__wrp > main > div.tag-page > div.container > div.tag-page__rows > div.tag-page__posts-col > div.posts-listing.posts-listing_inline > ul.posts-listing__list > li.posts-listing__item"
+          ).map(async function () {
+            let link = $(this)
+              .find("article.post-card-inline > a")
+              .attr("href");
+            let tag = $(this)
+              .find(
+                "article.post-card-inline > a.post-card-inline__figure-link > figure.post-card-inline__figure > span.post-card-inline__badge"
+              )
+              .text();
+            let publishedDate = $(this)
+              .find(
+                "article.post-card-inline > div.post-card-inline__content > div.post-card-inline__header > div.post-card-inline__meta > time"
+              )
+              .attr("datetime");
+            console.log(publishedDate, "published date");
+            let title = $(this)
+              .find(
+                "article.post-card-inline > div.post-card-inline__content > p.post-card-inline__text"
+              )
+              .text();
+            data.push(`https://cointelegraph.com${link}`);
+
+            // data.push({
+            //   news_url: `https://cointelegraph.com${link}`,
+            //   // news_asset
+            //   news_title: title,
+            //   news_tag: req.body.type,
+            //   meta: {
+            //     source: `https://cointelegraph.com/tags/${req.body.type}`,
+            //   },
+            //   news_publishedDate: publishedDate,
+            // });
+          });
+          console.log(data, "dadadad");
+          let content = [];
+
+          for (let i = 0; i < data.length; i++) {
+            await night
+              .goto(data[i])
+              .wait("body")
+              .evaluate(() => document.body.innerHTML)
+              .then((e) => {
+                let $2 = cheerio.load(e);
+                let as = $2(
+                  "#__nuxt  > #__layout > .layout > .layout__wrp > main > div.post-page > div.container > div.post-page__row > div.post-page__content-col > div.post-page__item > div.post,.post-page__article > article > div.post__content-wrapper"
+                ).text();
+                content.push({
+                  body: as,
+                });
+                return content;
+              })
+              .catch((e) => e);
+          }
+          content.map((c) => tfidf.addDocument(c.body));
+          let keywordArray = ["bitcoin", "MDEX", "Tether", "Ethereum"];
+          let updatedContent;
+          // tfidf.listTerms(keywordArray).forEach(function (item) {
+          //   console.log(item.term + ": " + item.tfidf);
+          // });
+          let coll = new HashTable();
+          for (let k = 0; k < keywordArray.length; k++) {
+            tfidf.tfidfs(keywordArray[k], function (i, measure) {
+              // if (measure > 7) {
+              // console.log(keywordArray[k]);
+              // console.log("document #" + i + " is " + measure);
+              coll.set(keywordArray[k], measure);
+              // updatedContent = content.map((ce) => {
+              //   var o = Object.assign({}, ce);
+              //   o.tag = keywordArray[k];
+              //   return o;
+              // });
+              // }
+              console.log(coll.get(keywordArray[k]), keywordArray[k]);
+            });
+          }
+
+          // console.log(updatedContent, "updatedcontent");
+          res.json({
+            updatedContent,
+          });
+          // Promise.all(prom)
+          //   .then((res) => res)
+          //   .catch((e) => e);
+          // const latestNews = await NEWS.insertMany(data);
+          // return res.created({ success: true });
+        } catch (e) {
+          console.log(e, "errr");
+        }
+      });
+
+    console.log(asds, "asdssss");
+  } catch (e) {
+    res.json({ message: e });
+
+    console.log(e, "eeeee");
+  }
 });
 
 app.listen(PORT, () => console.log("server is running", PORT));

@@ -4,8 +4,6 @@ const request = require("request");
 const cheerio = require("cheerio");
 const Nightmare = require("nightmare");
 var natural = require("natural");
-const Hash = require("./utils");
-const HashTable = require("./utils");
 
 let night = new Nightmare({
   show: true,
@@ -1573,29 +1571,26 @@ app.use("/night-telegraph", async (req, res) => {
               .catch((e) => e);
           }
           content.map((c) => tfidf.addDocument(c.body));
-          let keywordArray = ["bitcoin", "MDEX", "Tether", "Ethereum"];
+          let keywordArray = ["bitcoin"];
           let updatedContent;
           // tfidf.listTerms(keywordArray).forEach(function (item) {
           //   console.log(item.term + ": " + item.tfidf);
           // });
-          let coll = new HashTable();
           for (let k = 0; k < keywordArray.length; k++) {
             tfidf.tfidfs(keywordArray[k], function (i, measure) {
-              // if (measure > 7) {
-              // console.log(keywordArray[k]);
-              // console.log("document #" + i + " is " + measure);
-              coll.set(keywordArray[k], measure);
-              // updatedContent = content.map((ce) => {
-              //   var o = Object.assign({}, ce);
-              //   o.tag = keywordArray[k];
-              //   return o;
-              // });
-              // }
-              console.log(coll.get(keywordArray[k]), keywordArray[k]);
+              if (measure > 7) {
+                console.log(keywordArray[k]);
+                console.log("document #" + i + " is " + measure);
+                updatedContent = content.map((ce) => {
+                  var o = Object.assign({}, ce);
+                  o.tag = keywordArray[k];
+                  return o;
+                });
+              }
             });
           }
 
-          // console.log(updatedContent, "updatedcontent");
+          console.log(updatedContent, "updatedcontent");
           res.json({
             updatedContent,
           });
